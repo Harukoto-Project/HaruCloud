@@ -1,0 +1,54 @@
+<!doctype html>
+<html lang="ja">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HaruCloud Sync</title>
+    <link rel="stylesheet" href="./styles.css" />
+  </head>
+  <body>
+    <main>
+      <h1>HaruCloud Sync</h1>
+
+      <section>
+        <h2>MinIO設定</h2>
+        <div class="grid">
+          <label>Endpoint<input id="endpoint" type="text" placeholder="http://192.168.1.10:9000" /></label>
+          <label>Region<input id="region" type="text" value="us-east-1" /></label>
+          <label>Access Key<input id="accessKey" type="text" /></label>
+          <label>Secret Key<input id="secretKey" type="password" /></label>
+          <label>Bucket<input id="bucket" type="text" /></label>
+          <label class="checkbox"><input id="secure" type="checkbox" /> TLS(https)を使用</label>
+        </div>
+      </section>
+
+      <section>
+        <h2>同期フォルダ</h2>
+        <table>
+          <thead>
+            <tr>
+              <th>Folder ID</th>
+              <th>Local Path</th>
+              <th></th>
+            </tr>
+          </thead>
+          <tbody id="mappingsBody"></tbody>
+        </table>
+        <button id="addMapping">+ 行を追加</button>
+      </section>
+
+      <section class="actions">
+        <button id="saveConfig">設定保存</button>
+        <button id="testConnection">MinIO接続テスト</button>
+        <button id="manualSync">手動同期(アップロード)</button>
+      </section>
+
+      <section>
+        <h2>ログ</h2>
+        <pre id="logOutput"></pre>
+      </section>
+    </main>
+
+    <script type="module" src="./main.js"></script>
+  </body>
+  </html>
