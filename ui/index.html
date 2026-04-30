@@ -6,49 +6,70 @@
     <title>HaruCloud Sync</title>
     <link rel="stylesheet" href="./styles.css" />
   </head>
-  <body>
-    <main>
-      <h1>HaruCloud Sync</h1>
+  <body class="app">
+    <main class="shell">
+      <header class="hero">
+        <h1 class="hero-title">HaruCloud Sync</h1>
+        <p class="hero-sub">MinIO とフォルダをつなぐ同期クライアント</p>
+      </header>
 
-      <section>
-        <h2>MinIO設定</h2>
-        <div class="grid">
-          <label>Endpoint<input id="endpoint" type="text" placeholder="http://192.168.1.10:9000" /></label>
-          <label>Region<input id="region" type="text" value="us-east-1" /></label>
-          <label>Access Key<input id="accessKey" type="text" /></label>
-          <label>Secret Key<input id="secretKey" type="password" /></label>
-          <label>Bucket<input id="bucket" type="text" /></label>
-          <label class="checkbox"><input id="secure" type="checkbox" /> TLS(https)を使用</label>
+      <div class="stack">
+        <div class="group">
+          <h2 class="group-label">MinIO</h2>
+          <section class="panel">
+            <div class="grid">
+              <label class="field"
+                >Endpoint<input id="endpoint" type="text" placeholder="192.168.1.10:9000" autocomplete="off"
+              /></label>
+              <label class="field">Region<input id="region" type="text" value="us-east-1" autocomplete="off" /></label>
+              <label class="field">Access Key<input id="accessKey" type="text" autocomplete="username" /></label>
+              <label class="field">Secret Key<input id="secretKey" type="password" autocomplete="current-password" /></label>
+              <label class="field">Bucket<input id="bucket" type="text" autocomplete="off" /></label>
+              <label class="field field-inline field-span-full">
+                <input id="secure" type="checkbox" />
+                <span class="field-inline-text">TLS (https) を使用</span>
+              </label>
+            </div>
+          </section>
         </div>
-      </section>
 
-      <section>
-        <h2>同期フォルダ</h2>
-        <table>
-          <thead>
-            <tr>
-              <th>Folder ID</th>
-              <th>Local Path</th>
-              <th></th>
-            </tr>
-          </thead>
-          <tbody id="mappingsBody"></tbody>
-        </table>
-        <button id="addMapping">+ 行を追加</button>
-      </section>
+        <div class="group">
+          <h2 class="group-label">同期フォルダ</h2>
+          <section class="panel">
+            <div class="table-wrap">
+              <table class="sheet">
+                <thead>
+                  <tr>
+                    <th scope="col">Folder ID</th>
+                    <th scope="col">Local Path</th>
+                    <th scope="col" class="col-actions"></th>
+                  </tr>
+                </thead>
+                <tbody id="mappingsBody"></tbody>
+              </table>
+            </div>
+            <button type="button" id="addMapping" class="btn btn-ghost btn-add">＋ 行を追加</button>
+          </section>
+        </div>
 
-      <section class="actions">
-        <button id="saveConfig">設定保存</button>
-        <button id="testConnection">MinIO接続テスト</button>
-        <button id="manualSync">手動同期(アップロード)</button>
-      </section>
+        <div class="group">
+          <h2 class="group-label">操作</h2>
+          <section class="panel actions" aria-label="操作">
+            <button type="button" id="saveConfig" class="btn btn-primary">設定を保存</button>
+            <button type="button" id="testConnection" class="btn btn-secondary">接続をテスト</button>
+            <button type="button" id="manualSync" class="btn btn-secondary">手動同期（アップロード）</button>
+          </section>
+        </div>
 
-      <section>
-        <h2>ログ</h2>
-        <pre id="logOutput"></pre>
-      </section>
+        <div class="group">
+          <h2 class="group-label">ログ</h2>
+          <section class="panel panel-log">
+            <pre id="logOutput" class="log"></pre>
+          </section>
+        </div>
+      </div>
     </main>
 
     <script type="module" src="./main.js"></script>
   </body>
-  </html>
+</html>

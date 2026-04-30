@@ -1,5 +1,3 @@
-const { invoke } = window.__TAURI__.core;
-
 const mappingBody = document.getElementById("mappingsBody");
 const logOutput = document.getElementById("logOutput");
 
@@ -8,12 +6,20 @@ function appendLog(message) {
   logOutput.textContent = `[${now}] ${message}\n${logOutput.textContent}`;
 }
 
+function invoke(cmd, args) {
+  const fn = window.__TAURI__?.core?.invoke;
+  if (typeof fn !== "function") {
+    return Promise.reject(new Error("Tauri APIが未初期化です"));
+  }
+  return fn.call(window.__TAURI__.core, cmd, args);
+}
+
 function createRow(folderId = "", localPath = "") {
   const tr = document.createElement("tr");
   tr.innerHTML = `
     <td><input type="text" class="folder-id" value="${folderId}" placeholder="docs" /></td>
     <td><input type="text" class="local-path" value="${localPath}" placeholder="D:\\\\Docs" /></td>
-    <td><button class="remove-row">削除</button></td>
+    <td><button type="button" class="remove-row">削除</button></td>
   `;
   tr.querySelector(".remove-row").addEventListener("click", () => tr.remove());
   mappingBody.appendChild(tr);
@@ -59,44 +65,48 @@ document.getElementById("addMapping").addEventListener("click", () => {
   createRow();
 });
 
-document.getElementById("saveConfig").addEventListener("click", async () => {
-  try {
-    await invoke("save_config", { config: readConfigFromForm() });
-    appendLog("設定を保存しました");
-  } catch (e) {
-    appendLog(`保存失敗: ${e}`);
-  }
-});
-
-document.getElementById("testConnection").addEventListener("click", async () => {
-  try {
-    const cfg = readConfigFromForm();
-    const result = await invoke("test_minio_connection", { config: cfg.minio });
-    appendLog(result);
-  } catch (e) {
-    appendLog(`接続テスト失敗: ${e}`);
-  }
-});
-
-document.getElementById("manualSync").addEventListener("click", async () => {
-  try {
-    const cfg = readConfigFromForm();
-    const result = await invoke("manual_sync", { config: cfg });
-    appendLog(result.join("\n"));
-  } catch (e) {
-    appendLog(`手動同期失敗: ${e}`);
-  }
-});
-
 async function bootstrap() {
   try {
     const cfg = await invoke("load_config");
     writeConfigToForm(cfg);
     appendLog("設定を読み込みました");
   } catch (e) {
-    createRow();
+    if (mappingBody.querySelectorAll("tr").length === 0) {
+      createRow();
+    }
     appendLog(`設定読み込み失敗: ${e}`);
   }
 }
 
-bootstrap();
+window.addEventListener("load", () => {
+  document.getElementById("saveConfig").addEventListener("click", async () => {
+    try {
+      await invoke("save_config", { config: readConfigFromForm() });
+      appendLog("設定を保存しました");
+    } catch (e) {
+      appendLog(`保存失敗: ${e}`);
+    }
+  });
+
+  document.getElementById("testConnection").addEventListener("click", async () => {
+    try {
+      const cfg = readConfigFromForm();
+      const result = await invoke("test_minio_connection", { config: cfg.minio });
+      appendLog(result);
+    } catch (e) {
+      appendLog(`接続テスト失敗: ${e}`);
+    }
+  });
+
+  document.getElementById("manualSync").addEventListener("click", async () => {
+    try {
+      const cfg = readConfigFromForm();
+      const result = await invoke("manual_sync", { config: cfg });
+      appendLog(result.join("\n"));
+    } catch (e) {
+      appendLog(`手動同期失敗: ${e}`);
+    }
+  });
+
+  void bootstrap();
+});
