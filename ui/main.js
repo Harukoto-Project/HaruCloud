@@ -61,7 +61,7 @@ function createRow(folderId = "", localPath = "") {
   const tr = document.createElement("tr");
   tr.innerHTML = `
     <td><input type="text" class="folder-id" value="${folderId}" placeholder="docs" /></td>
-    <td><input type="text" class="local-path" value="${localPath}" placeholder="D:\\\\Docs" /></td>
+    <td><input type="text" class="local-path" value="${localPath}" placeholder="D:\\\\Docs または D:\\\\Docs\\\\readme.txt" /></td>
     <td><button type="button" class="remove-row">削除</button></td>
   `;
   tr.querySelector(".remove-row").addEventListener("click", () => tr.remove());

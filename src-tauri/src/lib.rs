@@ -250,6 +250,24 @@ fn walk_files(base: &Path) -> Result<Vec<PathBuf>, String> {
   Ok(files)
 }
 
+fn sync_root_and_files(local_input: &Path) -> Result<(PathBuf, Vec<PathBuf>), String> {
+  if local_input.is_file() {
+    let parent = local_input
+      .parent()
+      .ok_or_else(|| format!("親フォルダを取得できません: {}", local_input.display()))?
+      .to_path_buf();
+    return Ok((parent, vec![local_input.to_path_buf()]));
+  }
+  if local_input.is_dir() {
+    let files = walk_files(local_input)?;
+    return Ok((local_input.to_path_buf(), files));
+  }
+  Err(format!(
+    "パスがファイルでもディレクトリでもありません: {}",
+    local_input.display()
+  ))
+}
+
 #[tauri::command]
 async fn manual_sync(app: AppHandle, config: AppConfig) -> Result<Vec<String>, String> {
   validate_config(&config)?;
@@ -261,20 +279,20 @@ async fn manual_sync(app: AppHandle, config: AppConfig) -> Result<Vec<String>, S
   let mut scan_items: Vec<(String, PathBuf, String)> = Vec::new();
 
   for mapping in &config.mappings {
-    let local_root = Path::new(mapping.local_path.trim());
-    if !local_root.exists() {
+    let local_input = Path::new(mapping.local_path.trim());
+    if !local_input.exists() {
       logs.push(format!(
         "[skip] folder_id={} local_path が存在しません: {}",
         mapping.folder_id,
-        local_root.display()
+        local_input.display()
       ));
       continue;
     }
 
-    let files = walk_files(local_root)?;
+    let (local_root, files) = sync_root_and_files(local_input)?;
     for path in &files {
       let rel = path
-        .strip_prefix(local_root)
+        .strip_prefix(&local_root)
         .map_err(|e| format!("相対パス計算失敗: {e}"))?;
       let key = format!(
         "folders/{}/{}",
