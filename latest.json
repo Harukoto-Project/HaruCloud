@@ -1,0 +1,11 @@
+{
+    "version": "0.1.0-beta.2",
+    "notes": "beta2",
+    "pub_date": "2026-05-01T12:10:43+09:00",
+    "platforms": {
+      "windows-x86_64": {
+        "signature": "dW50cnVzdGVkIGNvbW1lbnQ6IHNpZ25hdHVyZSBmcm9tIHRhdXJpIHNlY3JldCBrZXkKUlVRc0M2clowOE5DVnNBY2xDakVCOVRUZEZkWVQxU0FhT1hKaVRHZ1c3MWF5ekNDVG9UVUMzNUkzajNtL3dSV1QxcjU5MW81eUNjai9oSnJWOC9KMTVNeHNUMWRwc2hkcUE4PQp0cnVzdGVkIGNvbW1lbnQ6IHRpbWVzdGFtcDoxNzc3NTk5MjQ0CWZpbGU6SGFydUNsb3VkIFN5bmNfMC4xLjAtYmV0YS4yX3g2NC1zZXR1cC5leGUKQ29Fcng4ZHpjanJaVWZ0TlNLMThBUmpKNUV0Y3VQMkQrSUxDK3FSb3krTER3VzcxWktmYXo2NUpFSnVqM053TUNMQVpjbXd1UzQyVmh6dHJOWHpuQVE9PQo=",
+        "url": "https://github.com/Harukoto-Project/HaruCloud/releases/download/v0.1.0-beta.2/HaruCloud%20Sync_0.1.0-beta.2_x64-setup.exe"
+      }
+    }
+  }
