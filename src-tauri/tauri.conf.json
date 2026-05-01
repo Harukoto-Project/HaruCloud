@@ -8,6 +8,17 @@
     "beforeDevCommand": "echo",
     "beforeBuildCommand": "echo"
   },
+  "plugins": {
+    "updater": {
+      "pubkey": "dW50cnVzdGVkIGNvbW1lbnQ6IG1pbmlzaWduIHB1YmxpYyBrZXk6IDU2NDJDM0QzRDlBQTBCMkMKUldRc0M2clowOE5DVnMzbEV3cmp4bGs3UlJ4NWNhZWYxbnRjL3N5UkYyLzhuYUVDNkpNUWxYNWIK",
+      "endpoints": [
+        "https://github.com/Harukoto/HaruCloud/releases/latest/download/latest.json"
+      ],
+      "windows": {
+        "installMode": "passive"
+      }
+    }
+  },
   "app": {
     "withGlobalTauri": true,
     "windows": [
@@ -27,6 +38,7 @@
   },
   "bundle": {
     "active": true,
+    "createUpdaterArtifacts": true,
     "targets": ["nsis"],
     "publisher": "Harukoto",
     "copyright": "Copyright © 2023-2026 Harukoto Project",

@@ -141,6 +141,37 @@ window.addEventListener("load", () => {
     }
   });
 
+  document.getElementById("checkUpdate").addEventListener("click", async () => {
+    try {
+      const r = await invoke("check_app_update");
+      if (r.available) {
+        appendLog(`更新あり: ${r.latestVersion}（現在 ${r.currentVersion}）`);
+        if (r.body) {
+          appendLog(r.body);
+        }
+      } else {
+        appendLog(`最新です（${r.currentVersion}）`);
+      }
+    } catch (e) {
+      appendLog(`更新確認失敗: ${e}`);
+    }
+  });
+
+  document.getElementById("installUpdate").addEventListener("click", async () => {
+    const btn = document.getElementById("installUpdate");
+    if (btn.disabled) {
+      return;
+    }
+    btn.disabled = true;
+    try {
+      await invoke("download_and_install_update");
+    } catch (e) {
+      appendLog(`更新のインストール失敗: ${e}`);
+    } finally {
+      btn.disabled = false;
+    }
+  });
+
   document.getElementById("syncRun").addEventListener("click", async () => {
     const btn = document.getElementById("syncRun");
     if (btn.disabled) {
@@ -168,5 +199,16 @@ window.addEventListener("load", () => {
     }
   });
 
-  void bootstrap();
+  void bootstrap().then(async () => {
+    try {
+      const r = await invoke("check_app_update");
+      if (r.available) {
+        appendLog(
+          `新しいバージョンがあります: ${r.latestVersion}（現在 ${r.currentVersion}）。「更新をインストール」から適用できます。`,
+        );
+      }
+    } catch {
+      /* 未リリース・オフライン時は無視 */
+    }
+  });
 });

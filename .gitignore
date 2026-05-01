@@ -1,4 +1,5 @@
 /target
+src-tauri/.tauri/updater.key
 **/*.rs.bk
 .env
 .env.*
