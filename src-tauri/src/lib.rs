@@ -135,6 +135,16 @@ fn minio_error_hints(detail: &str) -> String {
   out
 }
 
+fn updater_check_err_message(e: impl std::fmt::Display) -> String {
+  let s = e.to_string();
+  let hint = if s.contains("Could not fetch a valid release JSON") || s.contains("release JSON") {
+    " GitHub の最新リリースに、添付ファイル名が正確に latest.json のアセットがあるか確認してください（cargo tauri build の bundle 出力をアップロード）。tauri.conf の endpoints の owner/repo も合わせてください。"
+  } else {
+    ""
+  };
+  format!("更新の確認に失敗: {s}{hint}")
+}
+
 async fn build_s3_client(cfg: &MinioConfig) -> Result<Client, String> {
   let endpoint_input = cfg.endpoint.trim();
   let endpoint_url = if endpoint_input.starts_with("http://") || endpoint_input.starts_with("https://") {
@@ -413,7 +423,7 @@ async fn check_app_update(app: AppHandle) -> Result<UpdateCheckResult, String> {
     .map_err(|e| format!("アップデーター初期化失敗: {e}"))?
     .check()
     .await
-    .map_err(|e| format!("更新の確認に失敗: {e}"))?;
+    .map_err(updater_check_err_message)?;
   Ok(match update {
     None => UpdateCheckResult {
       available: false,
@@ -437,7 +447,7 @@ async fn download_and_install_update(app: AppHandle) -> Result<(), String> {
     .map_err(|e| format!("アップデーター初期化失敗: {e}"))?
     .check()
     .await
-    .map_err(|e| format!("更新の確認に失敗: {e}"))?
+    .map_err(updater_check_err_message)?
   else {
     return Err("インストールできる更新がありません".into());
   };
