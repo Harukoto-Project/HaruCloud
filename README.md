@@ -30,4 +30,4 @@ cargo tauri build
 
 ## ライセンス
 
-未設定（必要に応じて `LICENSE` を追加してください）。
+[MIT License](LICENSE)（Copyright © 2023-2026 Harukoto Project）

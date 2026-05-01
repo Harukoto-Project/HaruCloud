@@ -32,6 +32,8 @@
     "copyright": "Copyright © 2023-2026 Harukoto Project",
     "shortDescription": "ローカルフォルダを MinIO（S3）へ同期",
     "category": "Utility",
+    "license": "MIT",
+    "licenseFile": "../LICENSE",
     "icon": [
       "icons/HaruCloud.ico"
     ],
