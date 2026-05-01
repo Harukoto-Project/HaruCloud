@@ -54,10 +54,29 @@
 
         <div class="group">
           <h2 class="group-label">操作</h2>
-          <section class="panel actions" aria-label="操作">
-            <button type="button" id="saveConfig" class="btn btn-primary">設定を保存</button>
-            <button type="button" id="testConnection" class="btn btn-secondary">接続をテスト</button>
-            <button type="button" id="manualSync" class="btn btn-secondary">手動同期（アップロード）</button>
+          <section class="panel actions-panel" aria-label="操作">
+            <div class="action-row">
+              <button type="button" id="saveConfig" class="btn btn-secondary">設定を保存</button>
+              <button type="button" id="testConnection" class="btn btn-secondary">接続をテスト</button>
+              <button type="button" id="syncRun" class="btn btn-primary">同期</button>
+            </div>
+            <div id="syncProgressWrap" class="sync-progress-wrap" hidden>
+              <div class="sync-progress-meta">
+                <span id="syncProgressLabel" class="sync-progress-label"></span>
+                <span id="syncProgressFraction" class="sync-progress-fraction"></span>
+              </div>
+              <div
+                id="syncProgressTrack"
+                class="sync-progress-track"
+                role="progressbar"
+                aria-valuemin="0"
+                aria-valuemax="100"
+                aria-valuenow="0"
+                aria-label="同期の進捗"
+              >
+                <div id="syncProgressFill" class="sync-progress-fill"></div>
+              </div>
+            </div>
           </section>
         </div>
 

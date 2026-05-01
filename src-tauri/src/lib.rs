@@ -2,9 +2,13 @@ use std::path::{Path, PathBuf};
 
 use aws_config::{BehaviorVersion, Region};
 use aws_credential_types::Credentials;
-use aws_sdk_s3::{config::Builder as S3ConfigBuilder, Client};
+use aws_sdk_s3::{
+  config::Builder as S3ConfigBuilder,
+  error::DisplayErrorContext,
+  Client,
+};
 use serde::{Deserialize, Serialize};
-use tauri::{AppHandle, Manager};
+use tauri::{AppHandle, Emitter, Manager};
 
 #[derive(Debug, Clone, Serialize, Deserialize, Default)]
 #[serde(rename_all = "camelCase")]
@@ -29,6 +33,15 @@ struct FolderMapping {
 struct AppConfig {
   minio: MinioConfig,
   mappings: Vec<FolderMapping>,
+}
+
+#[derive(Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SyncProgressPayload {
+  done: u32,
+  total: u32,
+  folder_id: String,
+  current_file: String,
 }
 
 fn config_file_path(app: &AppHandle) -> Result<PathBuf, String> {
@@ -76,6 +89,40 @@ fn validate_config(cfg: &AppConfig) -> Result<(), String> {
     }
   }
   Ok(())
+}
+
+fn minio_tls_protocol_hint(detail: &str) -> &'static str {
+  if detail.contains("InvalidContentType")
+    || detail.contains("corrupt message")
+    || detail.contains("InvalidMessage")
+  {
+    " MinIO が平文 HTTP のときは TLS をオフにするか、エンドポイントを http:// で指定してください。"
+  } else {
+    ""
+  }
+}
+
+fn minio_region_mismatch_hint(detail: &str) -> String {
+  if !detail.contains("AuthorizationHeaderMalformed") || !detail.contains("region is wrong") {
+    return String::new();
+  }
+  let needle = "expecting '";
+  let Some(start) = detail.find(needle) else {
+    return " フォームの「region」を MinIO のバケットリージョンと一致させてください。".to_string();
+  };
+  let tail = &detail[start + needle.len()..];
+  let Some(end) = tail.find('\'') else {
+    return " フォームの「region」を MinIO のバケットリージョンと一致させてください。".to_string();
+  };
+  let region = &tail[..end];
+  format!(" フォームの「region」を「{region}」に変更して保存し、再試行してください。")
+}
+
+fn minio_error_hints(detail: &str) -> String {
+  let mut out = String::new();
+  out.push_str(minio_tls_protocol_hint(detail));
+  out.push_str(&minio_region_mismatch_hint(detail));
+  out
 }
 
 async fn build_s3_client(cfg: &MinioConfig) -> Result<Client, String> {
@@ -133,12 +180,15 @@ async fn test_minio_connection(config: MinioConfig) -> Result<String, String> {
     .max_keys(1)
     .send()
     .await
-    .map_err(|e| format!("MinIO接続テスト失敗: {e}"))?;
+    .map_err(|e| {
+      let d = format!("{}", DisplayErrorContext(&e));
+      format!("MinIO接続テスト失敗: {}{}", d, minio_error_hints(&d))
+    })?;
 
   Ok(format!("接続成功: bucket={}", config.bucket.trim()))
 }
 
-async fn walk_files(base: &Path) -> Result<Vec<PathBuf>, String> {
+fn walk_files(base: &Path) -> Result<Vec<PathBuf>, String> {
   let mut files = Vec::new();
   let mut dirs = vec![base.to_path_buf()];
 
@@ -159,10 +209,13 @@ async fn walk_files(base: &Path) -> Result<Vec<PathBuf>, String> {
 }
 
 #[tauri::command]
-async fn manual_sync(config: AppConfig) -> Result<Vec<String>, String> {
+async fn manual_sync(app: AppHandle, config: AppConfig) -> Result<Vec<String>, String> {
   validate_config(&config)?;
   let client = build_s3_client(&config.minio).await?;
   let mut logs = Vec::new();
+
+  let mut work: Vec<(String, PathBuf, Vec<PathBuf>)> = Vec::new();
+  let mut total_files = 0usize;
 
   for mapping in &config.mappings {
     let local_root = Path::new(mapping.local_path.trim());
@@ -175,16 +228,51 @@ async fn manual_sync(config: AppConfig) -> Result<Vec<String>, String> {
       continue;
     }
 
-    let files = walk_files(local_root).await?;
+    let files = walk_files(local_root)?;
+    total_files += files.len();
+    work.push((
+      mapping.folder_id.trim().to_string(),
+      local_root.to_path_buf(),
+      files,
+    ));
+  }
+
+  let app_handle = app.clone();
+  let emit = move |done: u32, total: u32, folder_id: &str, current_file: &str| {
+    let _ = app_handle.emit(
+      "sync-progress",
+      SyncProgressPayload {
+        done,
+        total,
+        folder_id: folder_id.to_string(),
+        current_file: current_file.to_string(),
+      },
+    );
+  };
+
+  emit(
+    0,
+    total_files as u32,
+    "",
+    if total_files == 0 {
+      "同期するファイルがありません"
+    } else {
+      "アップロードを開始します"
+    },
+  );
+
+  let mut done = 0u32;
+
+  for (folder_id, local_root, files) in work {
     let mut uploaded = 0usize;
 
     for path in files {
       let rel = path
-        .strip_prefix(local_root)
+        .strip_prefix(&local_root)
         .map_err(|e| format!("相対パス計算失敗: {e}"))?;
       let key = format!(
         "folders/{}/{}",
-        mapping.folder_id.trim(),
+        folder_id.trim(),
         rel.to_string_lossy().replace('\\', "/")
       );
       let body = tokio::fs::read(&path)
@@ -197,14 +285,32 @@ async fn manual_sync(config: AppConfig) -> Result<Vec<String>, String> {
         .body(body.into())
         .send()
         .await
-        .map_err(|e| format!("アップロード失敗 key={key}: {e}"))?;
+        .map_err(|e| {
+          let d = format!("{}", DisplayErrorContext(&e));
+          format!("アップロード失敗 key={key}: {}{}", d, minio_error_hints(&d))
+        })?;
       uploaded += 1;
+      done += 1;
+      let fname = path
+        .file_name()
+        .map(|s| s.to_string_lossy().into_owned())
+        .unwrap_or_default();
+      emit(done, total_files as u32, folder_id.as_str(), &fname);
     }
 
     logs.push(format!(
       "[ok] folder_id={} {}件をMinIOへアップロード",
-      mapping.folder_id, uploaded
+      folder_id, uploaded
     ));
+  }
+
+  if total_files > 0 {
+    emit(
+      total_files as u32,
+      total_files as u32,
+      "",
+      "完了",
+    );
   }
 
   Ok(logs)
